@@ -8,7 +8,7 @@
 
 <b>Conclusion</u></b> - Overall, there was a lot of data cleaning to complete based on the different ways of pulling data and making sure they were all in the correct format. Also, I found that there were a lot of departures, arrivals, vehicles that came through the airport, and a lot of people that parked their cars overnight in airport parking.
 
-<b><u>Navigation/u></b> - 
+<b><u>Navigation</u></b> - 
 
 2021-03-27-Phoenix-Sky-Harbor-Data-Preparation.ipynb is used on the GitHub website
 

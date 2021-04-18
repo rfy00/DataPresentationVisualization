@@ -1,4 +1,4 @@
-Intro - Data preparation needs to be completed on datasets no matter how simple they are. Airports have a lot of flight and airport information that can be analyzed to see how many flight departures and arrivals there are, how many people are leaving there cars overnight or staying a few hours, and the type of ground transportation people are using.
+<b>Intro</b> - Data preparation needs to be completed on datasets no matter how simple they are. Airports have a lot of flight and airport information that can be analyzed to see how many flight departures and arrivals their are, how many people are leaving there cars overnight or staying a few hours, and the type of ground transportation people are using.
 
 Tools - Python, SQLite3, Website, API, CSV, and Tableau
 

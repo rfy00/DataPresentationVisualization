@@ -1,5 +1,9 @@
 <b><i>Intro</i></b> - Exploratory Data Analysis (EDA) involves several steps from cleaning data all the way to identifying statistical and other data visualization methods to present the data.  https://analytics.usa.gov/data/ shows various datasets where participating government departments allow the public to gain insights into the type of data they store. For this EDA project, i chose to use two different time periods for the "Visits to all domains over 30 days" dataset.  The dataset shows all the participating government websites (about 400) that the public went to.
 
+<b><i>Statistical Question</i></b> - At the start of a national pandemic, will people search more federal government websites to try to find more information out more about COVID-19 and the stimulus bill than after a certain point when people start adapting to the economic unknowns?
+
+<b><i>Hypothesis</i></b> - I believe people will want to find out more about health issues related to COVID-19, the stimulus bill (i.e. stimulus checks, aid for small businesses), and every day uses (i.e. USPS) at the beginning of the national pandemic than after a certain point of time.  
+
 <b><i>Tools</i></b> - Python, CSV, PowerPoint
 
 <b><i>Data</i></b> - The following dataset that was used is from https://analytics.usa.gov/data/live/all-domains-30-days.csv I selected two different time periods for this dataset: Data pulled on 4-5-20 for the previous 30 days and on 5-17-20 for the previous 30 days

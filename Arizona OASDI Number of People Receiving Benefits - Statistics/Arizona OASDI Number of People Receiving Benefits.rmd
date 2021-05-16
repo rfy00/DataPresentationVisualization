@@ -1,0 +1,352 @@
+---
+title: 'Final Project - Arizona OASDI Number of People Receiving
+  Benefits and the Amount of Monthly Benefits (in thousands) '
+date: "February 26th 2020"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Introduction
+Many people qualify for Social Security throughout the United States.  This project will utilize the dataset that was taken from data.world based on the “Annual report providing Social Security beneficiary population data by state and ZIP code. Report for 2015”.  The project will use various graphs and data tables to show how the data can be split up by ZIP code, County, City/Town, Number of Qualified Recipients, and Amount of Monthly Benefits (in thousands).  This will help answer whether there is a correlation between the Total Monthly Benefits and Total Number of Recipients.  It will also help answer questions about which Counties have the least and most amount of Total Monthly Benfits and Total Number of Recipients.  There were multiple datasets for all the U.S. but I only used the Arizona dataset.  
+   
+## Preparation   
+  
+The following R libraries will be used:  
+-	library(readxl)    
+-	library(dplyr)   
+-	library(ggplot2)  
+-	library(car)  
+- library(pastecs)  
+  
+## Dataset  
+  
+There is a total of 493 Arizona ZIP Code records and 14 variables in the dataset.  The dataset did not include the City/Town so I went on the Internet to find a list of ZIP Codes along with the City/Town and County.  I matched them up with the ZIP Codes in the original dataset.  The Social Security Administration mentions as a footnote in the dataset that "To avoid disclosing the reason for Social Security eligibility and amounts of benefits received, a controlled rounding procedure was used for field office and ZIP Code data.  Data are not shown for ZIP Codes with fewer than 15 beneficiaries".  Field Offices means U.S. Postal Service geographic areas.  The dataset includes Arizona ZIP Codes, Cities/Towns, Counties, total number of eligible beneficiaries, number of eligible retired works, number of eligible disabled workers, number of eligible widow(ers) and parents, number of eligible spouses, number of eligible children, all beneficiaries total monthly benefits (in thousands), retired workers total monthly benefits (in thousands), widow(ers) and parents total monthly benefits (in thousands), and number of OASDI (Old Age, Survivors and Disability Insurance). OASDI refers to payments made to eligible people in the United States that meet certain requirements.  After updating the spreadsheet (removing merged cells and overall total rows) and creating the oasdiData data frame in R, there was not a need to clean the data further.  There was a TotalMonthlyBenefits column that needed to be included as shown below.  The str function is used to show the structure and part of the information.  
+  
+```{r}
+library(readxl)
+library(dplyr) 
+library(ggplot2)
+library(car)
+library(pastecs)
+
+## Upload the data
+oasdiData <- read_excel("~/Desktop/DSC520/Week10/updateoasdi_zip15.xlsx")
+
+## Add TotalMonthlyBenefits to oasdiDataSummary
+oasdiData$TotalMonthlyBenefits <- (oasdiData$AllBeneficiariesTotMonthlyBenefits + oasdiData$RetiredWorkersTotMonthlyBenefits + oasdiData$WidowsWidowersParentsTotMonthlyBenefits)
+                        
+str(oasdiData)
+
+```
+  
+The data was summarized for each field by County and was calculated based on the oasdiData table as shown below.  
+  
+```{r}
+## Summary of oasdiData
+oasdiDataSummary <- oasdiData %>%
+select(TotalNbr, RetiredWorkersNbr, DisabledWorkersNbr, WidowsWidowersParentsNbr, SpousesNbr, ChildrenNbr, AllBeneficiariesTotMonthlyBenefits, RetiredWorkersTotMonthlyBenefits, WidowsWidowersParentsTotMonthlyBenefits, NbrOfOASDIbeneficiariesAged65orOlder, TotalMonthlyBenefits) %>%
+group_by(oasdiData$County) %>%
+summarise(TotalNbr = sum(TotalNbr), RetiredWorkersNbr = sum(RetiredWorkersNbr), DisabledWorkersNbr = sum(DisabledWorkersNbr), WidowsWidowersParentsNbr = sum(WidowsWidowersParentsNbr), SpousesNbr = sum(SpousesNbr), ChildrenNbr = sum(ChildrenNbr), AllBeneficiariesTotMonthlyBenefits = sum(AllBeneficiariesTotMonthlyBenefits), RetiredWorkersTotMonthlyBenefits = sum(RetiredWorkersTotMonthlyBenefits), WidowsWidowersParentsTotMonthlyBenefits = sum(WidowsWidowersParentsTotMonthlyBenefits), NbrOfOASDIbeneficiariesAged65orOlder = sum(NbrOfOASDIbeneficiariesAged65orOlder), TotalMonthlyBenefits = sum(TotalMonthlyBenefits))
+
+oasdiDataSummary
+```
+  
+The mean of each field by County was calculated based on the oasdiData table as shown below.  
+
+```{r}
+##Mean Summary of oasdiData
+oasdiDataSummaryMean <- oasdiData %>%
+select(TotalNbr, RetiredWorkersNbr, DisabledWorkersNbr, WidowsWidowersParentsNbr, SpousesNbr, ChildrenNbr, AllBeneficiariesTotMonthlyBenefits, RetiredWorkersTotMonthlyBenefits, WidowsWidowersParentsTotMonthlyBenefits, NbrOfOASDIbeneficiariesAged65orOlder, TotalMonthlyBenefits) %>%
+group_by(oasdiData$County) %>%
+summarise(TotalNbr = round(mean(TotalNbr),2), RetiredWorkersNbr = round(mean(RetiredWorkersNbr),2), DisabledWorkersNbr = round(mean(DisabledWorkersNbr),2), WidowsWidowersParentsNbr = round(mean(WidowsWidowersParentsNbr),2), SpousesNbr = round(mean(SpousesNbr),2), ChildrenNbr = round(mean(ChildrenNbr),2), AllBeneficiariesTotMonthlyBenefits = round(mean(AllBeneficiariesTotMonthlyBenefits),2), RetiredWorkersTotMonthlyBenefits = round(mean(RetiredWorkersTotMonthlyBenefits),2), WidowsWidowersParentsTotMonthlyBenefits = round(mean(WidowsWidowersParentsTotMonthlyBenefits),2), NbrOfOASDIbeneficiariesAged65orOlder = round(mean(NbrOfOASDIbeneficiariesAged65orOlder),2), TotalMonthlyBenefits = round(mean(TotalMonthlyBenefits),2))
+
+oasdiDataSummaryMean
+```
+
+The data was summarized for each field by County and CityTown and was calculated based on the oasdiData table as shown below.    
+  
+```{r}
+## Summary of oasdiDataCountyCityTown
+oasdiDataSummaryCountyCityTown <- oasdiData %>%
+select(TotalNbr, RetiredWorkersNbr, DisabledWorkersNbr, WidowsWidowersParentsNbr, SpousesNbr, ChildrenNbr, AllBeneficiariesTotMonthlyBenefits, RetiredWorkersTotMonthlyBenefits, WidowsWidowersParentsTotMonthlyBenefits, NbrOfOASDIbeneficiariesAged65orOlder, TotalMonthlyBenefits) %>%
+group_by(oasdiData$County, oasdiData$CityTown) %>%
+summarise(TotalNbr = sum(TotalNbr), RetiredWorkersNbr = sum(RetiredWorkersNbr), DisabledWorkersNbr = sum(DisabledWorkersNbr), WidowsWidowersParentsNbr = sum(WidowsWidowersParentsNbr), SpousesNbr = sum(SpousesNbr), ChildrenNbr = sum(ChildrenNbr), AllBeneficiariesTotMonthlyBenefits = sum(AllBeneficiariesTotMonthlyBenefits), RetiredWorkersTotMonthlyBenefits = sum(RetiredWorkersTotMonthlyBenefits), WidowsWidowersParentsTotMonthlyBenefits = sum(WidowsWidowersParentsTotMonthlyBenefits), NbrOfOASDIbeneficiariesAged65orOlder = sum(NbrOfOASDIbeneficiariesAged65orOlder), TotalMonthlyBenefits = sum(TotalMonthlyBenefits))
+
+oasdiDataSummaryCountyCityTown
+
+```
+  
+The stat.desc shows various pieces of information about the TotalNbr of recipients and the TotalMonthlyBenefits (in thousands).  
+   
+```{r}
+options(scipen=100)
+options(digits=2)
+stat.desc(oasdiDataSummary[c("TotalNbr","TotalMonthlyBenefits")], basic=TRUE, desc=TRUE, norm=TRUE, p=0.95)
+
+```
+  
+### The below information shows the Top 5 for each number of recipients field  
+  
+```{r}
+##Top 5 Nbr of recipients
+oasdiDataTop5ZIPTotalNbr <- top_n(oasdiData, 5, oasdiData$TotalNbr) 
+
+oasdiDataTop5ZIPTotalNbr <- dplyr::select (oasdiDataTop5ZIPTotalNbr, CityTown, County, TotalNbr) %>% arrange(desc(TotalNbr))
+
+oasdiDataTop5ZIPTotalNbr
+```
+  
+```{r}
+##Top 5 or Nbr of Retired Workers recipients
+oasdiDataTop5ZIPRetiredNbr <- top_n(oasdiData, 5, oasdiData$RetiredWorkersNbr) 
+
+oasdiDataTop5ZIPRetiredNbr <- dplyr::select (oasdiDataTop5ZIPRetiredNbr, CityTown, County, RetiredWorkersNbr) %>% arrange(desc(RetiredWorkersNbr))
+
+oasdiDataTop5ZIPRetiredNbr
+```
+  
+```{r}
+##Top 5 or Nbr of Disabled recipients
+oasdiDataTop5ZIPDisabledNbr <- top_n(oasdiData, 5, oasdiData$DisabledWorkersNbr) 
+
+oasdiDataTop5ZIPDisabledNbr <- dplyr::select (oasdiDataTop5ZIPDisabledNbr, CityTown, County, DisabledWorkersNbr) %>% arrange(desc(DisabledWorkersNbr))
+
+oasdiDataTop5ZIPDisabledNbr
+```
+  
+```{r}
+##Top 5 or Nbr of Widow(ers) and Parent recipients
+oasdiDataTop5ZIPWidowWidowerParentNbr <- top_n(oasdiData, 5, oasdiData$WidowsWidowersParentsNbr) 
+
+oasdiDataTop5ZIPWidowWidowerParentNbr <- dplyr::select (oasdiDataTop5ZIPWidowWidowerParentNbr, CityTown, County, WidowsWidowersParentsNbr) %>% arrange(desc(WidowsWidowersParentsNbr))
+
+oasdiDataTop5ZIPWidowWidowerParentNbr
+```
+  
+```{r}
+##Top 5 or Nbr of Spouse recipients
+oasdiDataTop5ZIPTSpouseNbr <- top_n(oasdiData, 5, oasdiData$SpousesNbr) 
+
+oasdiDataTop5ZIPTSpouseNbr <- dplyr::select (oasdiDataTop5ZIPTSpouseNbr, CityTown, County, SpousesNbr) %>% arrange(desc(SpousesNbr))
+
+oasdiDataTop5ZIPTSpouseNbr
+```
+  
+```{r}
+##Top 5 or Nbr of Children recipients
+oasdiDataTop5ZIPChildrenNbr <- top_n(oasdiData, 5, oasdiData$ChildrenNbr)
+
+oasdiDataTop5ZIPChildrenNbr <- dplyr::select (oasdiDataTop5ZIPChildrenNbr, CityTown, County, ChildrenNbr) %>% arrange(desc(ChildrenNbr))
+
+oasdiDataTop5ZIPChildrenNbr
+```
+  
+## The below information shows the Bottom 5 for each field   
+  
+```{r}
+##Bottom 5 or Nbr of Children recipients
+oasdiDataBottom5ZIPTotalNbr <- tail(oasdiData, 5, oasdiData$TotalNbr) 
+
+oasdiDataBottom5ZIPTotalNbr <- dplyr::select (oasdiDataBottom5ZIPTotalNbr, CityTown, County, ChildrenNbr) %>% arrange(ChildrenNbr)
+
+oasdiDataBottom5ZIPTotalNbr
+```
+  
+```{r}
+##Bottom 5 or Nbr of Retired Workers recipients
+oasdiDataBottom5ZIPRetiredNbr <- tail(oasdiData, 5, oasdiData$RetiredWorkersNbr)  
+
+oasdiDataBottom5ZIPRetiredNbr <- dplyr::select (oasdiDataBottom5ZIPRetiredNbr, CityTown, County, RetiredWorkersNbr) %>% arrange(RetiredWorkersNbr)
+
+oasdiDataBottom5ZIPRetiredNbr
+```
+
+```{r}
+##Bottom 5 or Nbr of Disabled recipients
+oasdiDataBottom5ZIPDisabledNbr <- tail(oasdiData, 5, oasdiData$DisabledWorkersNbr)
+
+oasdiDataBottom5ZIPDisabledNbr <- dplyr::select (oasdiDataBottom5ZIPDisabledNbr, CityTown, County, DisabledWorkersNbr) %>% arrange(DisabledWorkersNbr)
+
+oasdiDataBottom5ZIPDisabledNbr
+```
+  
+```{r}
+##Bottom 5 or Nbr of Widow(ers) and Parents recipients
+oasdiDataBottom5ZIPWidowsWidowersParentsNbr <- tail(oasdiData, 5, oasdiData$WidowsWidowersParentsNbr) 
+
+oasdiDataBottom5ZIPWidowsWidowersParentsNbr <- dplyr::select (oasdiDataBottom5ZIPWidowsWidowersParentsNbr, CityTown, County, WidowsWidowersParentsNbr) %>% arrange(WidowsWidowersParentsNbr)
+
+oasdiDataBottom5ZIPWidowsWidowersParentsNbr
+```
+  
+```{r}
+##Bottom 5 or Nbr of Spouse recipients
+oasdiDataBottom5ZIPSpousesNbr <- tail(oasdiData, 5, oasdiData$SpousesNbr) 
+
+oasdiDataBottom5ZIPSpousesNbr <- dplyr::select (oasdiDataBottom5ZIPSpousesNbr, CityTown, County, SpousesNbr) %>% arrange(SpousesNbr)
+
+oasdiDataBottom5ZIPSpousesNbr
+```
+  
+```{r}
+##Bottom 5 or Nbr of Children recipients
+oasdiDataBottom5ZIPChildrenNbr <- tail(oasdiData, 5, oasdiData$ChildrenNbr) 
+
+oasdiDataBottom5ZIPChildrenNbr <- dplyr::select (oasdiDataBottom5ZIPChildrenNbr, CityTown, County, ChildrenNbr) %>% arrange(ChildrenNbr)
+
+oasdiDataBottom5ZIPChildrenNbr
+```
+  
+### The below information shows the Top 5 for each Monthly Benefits field  
+   
+```{r}
+#Top 5 Nbr of Monthly Benefits (in thousands)
+oasdiDataTop5TotalMonthlyBenefits <- top_n(oasdiData, 5, oasdiData$AllBeneficiariesTotMonthlyBenefits) 
+
+oasdiDataTop5TotalMonthlyBenefits <- dplyr::select (oasdiDataTop5TotalMonthlyBenefits, CityTown, County, TotalMonthlyBenefits) %>% arrange(desc(TotalMonthlyBenefits))
+
+oasdiDataTop5TotalMonthlyBenefits
+``` 
+  
+```{r}
+#Top 5 Nbr of All Beneficiaries Monthly Benefits (in thousands)
+oasdiDataTop5BeneficiariesBenefits <- top_n(oasdiData, 5, oasdiData$AllBeneficiariesTotMonthlyBenefits) 
+
+oasdiDataTop5BeneficiariesBenefits <- dplyr::select (oasdiDataTop5BeneficiariesBenefits, CityTown, County, AllBeneficiariesTotMonthlyBenefits) %>% arrange(desc(AllBeneficiariesTotMonthlyBenefits))
+
+oasdiDataTop5BeneficiariesBenefits
+```  
+  
+```{r}
+#Top 5 Nbr of Retired Workers Monthly Benefits (in thousands)
+oasdiDataTop5RetiredWorkersBenefits <- top_n(oasdiData, 5, oasdiData$RetiredWorkersTotMonthlyBenefits) 
+
+oasdiDataTop5RetiredWorkersBenefits <- dplyr::select (oasdiDataTop5RetiredWorkersBenefits, CityTown, County, RetiredWorkersTotMonthlyBenefits) %>% arrange(desc(RetiredWorkersTotMonthlyBenefits))
+
+oasdiDataTop5RetiredWorkersBenefits
+``` 
+  
+```{r}
+#Top 5 Nbr of Widow(ers) and Parents Monthly Benefits (in thousands)
+oasdiDataTop5WWPBenefits <- top_n(oasdiData, 5, oasdiData$WidowsWidowersParentsTotMonthlyBenefits) 
+
+oasdiDataTop5WWPBenefits <- dplyr::select (oasdiDataTop5WWPBenefits, CityTown, County, WidowsWidowersParentsTotMonthlyBenefits) %>% arrange(desc(WidowsWidowersParentsTotMonthlyBenefits))
+
+oasdiDataTop5WWPBenefits
+``` 
+
+### The below information shows the Bottom 5 for each Monthly Benefits field  
+   
+```{r}
+#Bottom 5 Nbr of Monthly Benefits (in thousands)
+oasdiDataBottom5TotalMonthlyBenefits <- tail(oasdiData, 5, oasdiData$TotalMonthlyBenefits) 
+
+oasdiDataBottom5TotalMonthlyBenefits <- dplyr::select (oasdiDataBottom5TotalMonthlyBenefits, CityTown, County, TotalMonthlyBenefits) %>% arrange(TotalMonthlyBenefits)
+
+oasdiDataBottom5TotalMonthlyBenefits
+``` 
+  
+```{r}
+#Bottom 5 Nbr of Beneficiaries Monthly Benefits (in thousands)
+oasdiDataBottom5BeneficiariesBenefits <- tail(oasdiData, 5, oasdiData$AllBeneficiariesTotMonthlyBenefits) 
+
+oasdiDataBottom5BeneficiariesBenefits <- dplyr::select (oasdiDataBottom5BeneficiariesBenefits, CityTown, County, AllBeneficiariesTotMonthlyBenefits) %>% arrange(AllBeneficiariesTotMonthlyBenefits)
+
+oasdiDataBottom5BeneficiariesBenefits
+``` 
+  
+```{r}
+#Bottom 5 Nbr of Retired Workers Monthly Benefits (in thousands)
+oasdiDataBottom5RetiredWorkersBenefits <- tail(oasdiData, 5, oasdiData$RetiredWorkersTotMonthlyBenefits)
+
+oasdiDataBottom5RetiredWorkersBenefits <- dplyr::select (oasdiDataBottom5RetiredWorkersBenefits, CityTown, County, RetiredWorkersTotMonthlyBenefits) %>% arrange(RetiredWorkersTotMonthlyBenefits)
+
+oasdiDataBottom5RetiredWorkersBenefits
+``` 
+  
+```{r}
+#Bottom 5 Nbr of Widow(ers) and Parents Monthly Benefits (in thousands)
+oasdiDataBottom5WWPBenefits <- tail(oasdiData, 5, oasdiData$WidowsWidowersParentsTotMonthlyBenefits) 
+
+oasdiDataBottom5WWPBenefits <- dplyr::select (oasdiDataBottom5WWPBenefits, CityTown, County, WidowsWidowersParentsTotMonthlyBenefits) %>% arrange(WidowsWidowersParentsTotMonthlyBenefits)
+
+oasdiDataBottom5WWPBenefits
+``` 
+  
+## Graphs  
+  
+The Q-Plot shows Maricopa County has the most amount of OASDI recipients.  This is due to Maricopa being the most populous county in Arizona.  Greenlee County is on the border of New Mexio towards the southwest quadrant of Arizona. This county has the least amount of recipients.
+
+```{r}
+library(ggplot2)
+
+qplotgraph <- qplot(x = oasdiDataSummary$TotalNbr, y = oasdiDataSummary$`oasdiData$County`, data = oasdiDataSummary, color = factor(`oasdiData$County`), geom = "jitter") + geom_smooth(method = "lm", se = FALSE, color = "black") + labs(title = "County and Total Nbr of 2015 OASDI Recipients", x = "Nbr of OASDI Recipients", y = "County") + theme(legend.position = "none") 
+qplotgraph
+```
+  
+The geom_qq graph that is used to determine whether a range of numbers follows a certain distribution.  It looks like in the graph below, the Number of Retired Wokers recipients is not a perfect distribution and has several outliers.  This also suggests the high outliers are due to more Retired Workers recipients live in Maricopa County.  The other lines seem to have near perfect normal distribution.  
+  
+```{r}
+ggplot(oasdiDataSummary, x = oasdiDataSummary$`oasdiData$County`, y = oasdiDataSummary$RetiredWorkersNbr) + geom_qq_line(aes(sample = oasdiDataSummary$RetiredWorkersNbr), color = "blue") + geom_qq(aes(sample = oasdiDataSummary$RetiredWorkersNbr), color = "blue") + geom_qq(aes(sample = oasdiDataSummary$DisabledWorkersNbr), color = "green") + geom_qq_line(aes(sample = oasdiDataSummary$DisabledWorkersNbr), color = "green")  + geom_qq(aes(sample = oasdiDataSummary$WidowsWidowersParentsNbr), color = "red") + geom_qq_line(aes(sample = oasdiDataSummary$WidowsWidowersParentsNbr), color = "red")  + geom_qq(aes(sample = oasdiDataSummary$SpousesNbr), color = "orange") + geom_qq_line(aes(sample = oasdiDataSummary$SpousesNbr), color = "orange")  + geom_qq(aes(sample = oasdiDataSummary$ChildrenNbr), color = "purple") + geom_qq_line(aes(sample = oasdiDataSummary$ChildrenNbr), color = "purple")  + labs(title = "Sample of OASDI Summary Data - Number of Recipients", caption = "\nPurple = Children\nOrange = Spouses\nBlue = Retired Workers\nGreen = Disabled Workers\nRed = Widows Widowers Parents")
+```
+  
+The geom_qq graph below shows All Beneficiaries Total Monthly Benefits and Retired Workers Total Monthly Benefits have more outliers.  The Widow(ers) and Parents Total Monthly Benefits has near perfect normal distribution.  
+  
+```{r}
+ggplot(oasdiDataSummary, x = oasdiDataSummary$`oasdiData$County`, y = oasdiDataSummary$AllBeneficiariesTotMonthlyBenefits) + geom_qq(aes(sample = oasdiDataSummary$AllBeneficiariesTotMonthlyBenefits), color = "blue") + geom_qq_line(aes(sample = oasdiDataSummary$AllBeneficiariesTotMonthlyBenefits), color = "blue") + geom_qq(aes(sample = oasdiDataSummary$RetiredWorkersTotMonthlyBenefits), color = "green") + geom_qq_line(aes(sample = oasdiDataSummary$RetiredWorkersTotMonthlyBenefits), color = "green") + geom_qq(aes(sample = oasdiDataSummary$WidowsWidowersParentsTotMonthlyBenefits), color = "red") + geom_qq_line(aes(sample = oasdiDataSummary$WidowsWidowersParentsTotMonthlyBenefits), color = "red") + labs(title = "Sample of OASDI Summary Data - Total Monthly Benefits", caption = "\nBlue = All Beneficiaries\nGreen = Retired Workers\nRed = Widows Widowers Parents")
+
+```
+  
+The histograms are used to evaluate the distribution of data and the red lines show the normal distribution.
+  
+```{r}
+hist(oasdiData$TotalNbr, col="purple", freq=FALSE, breaks="FD", main = "Total Nbr of 2015 OASDI Recipients", xlab = "Nbr of OASDI Recipients", ylab = "Frequency")
+curve(dnorm(x, mean=mean(oasdiData$TotalNbr), sd=sd(oasdiData$TotalNbr)), add=TRUE, col="red") 
+
+hist(oasdiData$TotalMonthlyBenefits, col="orange", freq=FALSE, breaks="FD", main = "Total Nbr of 2015 Monthly Benefits", xlab = "Total Monthly Benefits", ylab = "Frequency")
+curve(dnorm(x, mean=mean(oasdiData$TotalNbr), sd=sd(oasdiData$TotalNbr)), add=TRUE, col="red")
+```
+
+The scatter plot below shows most of the Total Nbr of recipients and Total Monthly Benefits based on ZIP code appear below 10,0000 recipients and 20,000 Monthly Benefits (in thousands).  The outliers past that show certain ZIP codes (potentially in Maricopa County) that have a lot more recipients which will result in higher Total Monthly Benefits.  
+  
+```{r}
+scatterplot(oasdiData$TotalNbr~oasdiData$TotalMonthlyBenefits, boxplots= FALSE, col=gray(c(0,0.5,0.7)), data=oasdiDataSummary, main = "Total Monthly Benefits and Total Number of Recipients", xlab = "Monthly Benefits", ylab = "Total Number of Recipients")
+```
+
+The Scatter Plot Matrix is another way to show how each of the number of recipients relates to each other.  The data is based on ZIP Codes.  
+  
+```{r}
+scatterplotMatrix(~ oasdiData$RetiredWorkersNbr + oasdiData$DisabledWorkersNbr + oasdiData$WidowsWidowersParentsNbr + oasdiData$SpousesNbr + oasdiData$ChildrenNbr, data=oasdiData)
+```
+  
+The Scatter Plot Matrix is another way to show how each of the Monthly Benefits relates to each other.  The data is based on ZIP Codes.  
+  
+```{r}
+scatterplotMatrix(~ oasdiData$AllBeneficiariesTotMonthlyBenefits + oasdiData$RetiredWorkersTotMonthlyBenefits + oasdiData$WidowsWidowersParentsTotMonthlyBenefits, data=oasdiData)
+```
+
+## Conclusion  
+  
+Overall, depending on the groupings for the Total Number of recipient fields, the Top 5 varied a little by ZIP Code and City/Town.  For instance, Sun City and Sun City West are in Maricopa County and are retirement communities.  Surprise is just south of those communities so i would expect the number of total recipients to be high.  Tucson (second populous city in Arizona) and Green Valley (suburb of Tucson) are in Pima County (near the border in the South Quadrants) have the 4th and 5th highest recipients.
+
+What was also interesting is all the cities/towns that were in the bottom 5 were in Apache County which is located in towards the northwest of Arizona next to the New Mexico border.  This may be due to population is not as high as other counties and Indian Reservations.
+
+The correlation between the Number of recipients and the Monthly Benefits (in thousands) seem to be greater when the population is higher.  With Maricopa County being the most populous county and Pima County being the second most populous county, they will have more ZIP Codes that will be outliers compared to the rest of the state.
+
+There were quite a few limitations that i ran into.  The dataset was mainly based on two major categories, Number of Recipients and Monthly Benefits.  There are only so many ways a person can slice and dice the data and look at it using graphs.  Looking at the other states where the same data was gathered for would help compare information.  A person would be able to gain better understanding of where the most people based on each category lived based on ZIP Code and County.  
+  
+  
+## Resources  
+  
+Annual report providing Social Security beneficiary population data by state and ZIP code. Report for 2015.  
+Source: https://catalog.data.gov/dataset/oasdi-beneficiaries-by-state-and-zip-code-2015
+Last updated at https://catalog.data.gov/organization/ssa-gov : 2018-09-06
+
+
+

@@ -8,8 +8,22 @@
 
 <b><i>Navigation</i></b> - 
 
-<b>Arizona OASDI Number of People Receiving Benefits.rmd</b> is the main R file
+<b>2000 to 2014 Airplan and Vehicle Statistics.pdf</b> shows a page of charts that were created in Tableau
 
-<b>Arizona OASDI Number of People Receiving Benefits and the Amount of Monthly Benefits.pdf</b> is the final output of the R Markdown code
+<b>Aircraft Travel vs Vehicle Travel Executive Summary.pptx</b> shows an Executive Summary PowerPoint where the charts were created in Tableau
 
-<b>updateoasdi_zip15.xlsx</b> is the file that is uploaded into the rmd file
+<b>Aircraft Travel vs Vehicle Travel.pptx</b> shows the final PowerPoint (charts created in Tableau)
+
+<b>Airline Travel vs Vehicle Travel Infographic.pdf</b> shows an infographic (charts created in Tableau)
+
+<b>Dataset References.docx</b> has references that were used in the visualizations
+
+<b><i>Datasets</i></b> - 
+
+<b>AirlineRevenue.xlsx</b>
+
+<b>Airplane Incident Data by Major Airline.xlsx</b>
+
+<b>Airplane Incident Data.xlsx</b>
+
+<b>Vehicle Crash Data.xlsx</b>

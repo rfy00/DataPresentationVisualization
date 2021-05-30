@@ -1,0 +1,236 @@
+---
+title: 'NYC Restaurant Inspections'
+date: "May 2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction  
+NYC Restaurant Inspections Intro  
+  
+ 
+## Preparation   
+The following R libraries will be used: 
+  - library(dplyr)
+  - library(tibble)
+  - library(stringr)
+  - library(tidyverse)
+  - library(tidyr) 
+  - library(purrr) 
+  - library(RSocrata)
+  - library(ggplot2) 
+  - library(lubridate)
+  - library(tm) 
+  - library(SnowballC) 
+  - library(wordcloud) 
+  - library(RColorBrewer) 
+  
+
+## Dataset 
+  Describe dataset  
+  
+
+```{r}
+library(dplyr)
+library(tibble)
+library(stringr)
+library(tidyverse)
+library(tidyr) 
+library(purrr) 
+library(RSocrata)
+library(ggplot2) 
+library(lubridate)
+library(tm) 
+library(SnowballC) 
+library(wordcloud) 
+library(RColorBrewer)
+library(utils)
+
+```
+
+```{r}
+
+# Import the data and look at the first six rows
+df <- read.csv("~/Desktop/DSC 680/Week12/DOHMH_New_York_City_Restaurant_Inspection_Results.csv")
+head(df)
+
+```
+
+```{r}
+
+# Converts the Date fields from POSIXlt to date
+date_conv <- function(x){
+    if (identical(unlist(class(x))[1],"POSIXlt")){
+        x<-as.Date(x)
+    } else(x)
+}
+
+##  created a tible from data frame
+df_tib <- as_tibble(map(df,date_conv))
+
+head(df_tib[1:20,])
+
+```
+
+```{r}
+
+#Inspections results for 2020
+inspections = unique(select(df_tib, CAMIS, BORO, ZIPCODE, CUISINE.DESCRIPTION, INSPECTION.DATE, INSPECTION.YEAR, ACTION, SCORE, GRADE)) 
+inspections = filter(inspections, INSPECTION.YEAR == '2020' & (GRADE == 'A'| GRADE== 'B'| GRADE== 'C') & ACTION !='closed' & BORO !='Missing')
+
+# Selects only the latest for each restaurant
+latest = merge( aggregate(INSPECTION.DATE ~ CAMIS, inspections, max), inspections) #Unique restaurants and their latest score/grade 
+
+# List of unique restaurants and their grade for 2020
+restaurants = unique(select(latest, CAMIS, BORO, ZIPCODE, CUISINE.DESCRIPTION, SCORE, GRADE))
+
+```
+
+```{r}
+
+ggplot(data=restaurants, aes(x=reorder(BORO, desc(BORO)))) + 
+    geom_bar(aes(fill=GRADE), position='dodge') + 
+    labs(title='Grades in each NY Borough for 2020', x='Borough', y='# of Restaurants') + scale_y_continuous(limits=c(0,2300), breaks=seq(0,10000,1000)) + 
+    theme_bw()
+
+```
+
+```{r}
+library(dplyr)
+# text mining library
+library(tidytext)
+library(igraph)
+library(ggraph)
+
+textdata<- df_tib%>%
+        filter(INSPECTION.YEAR == 2020 & (GRADE =='A'| GRADE=='B'| GRADE=='C') & ACTION !='closed' & BORO !='Missing')%>%
+        select(VIOLATION.DESCRIPTION)
+
+textdata$StrippedText <- gsub("&amp","", textdata$VIOLATION.DESCRIPTION)
+
+nyc_clean <- textdata %>%
+  dplyr::select(StrippedText) %>%
+  unnest_tokens(word, StrippedText)
+
+
+
+# plot the top 15 words -- notice any issues?
+nyc_clean %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(x = "Count",
+       y = "Unique words",
+       title = "Count of unique words found in NYC Violation Descriptions")
+
+
+```
+
+```{r}
+
+# load list of stop words - from the tidytext package
+data("stop_words")
+# view first 6 words
+head(stop_words)
+
+nrow(nyc_clean)
+
+# remove stop words from your list of words
+cleaned_nyc_words <- nyc_clean %>%
+  anti_join(stop_words)
+
+nrow(cleaned_nyc_words)
+
+cleaned_nyc_words
+
+# plot the top 15 words -- notice any issues?
+cleaned_nyc_words %>%
+  count(word, sort = TRUE) %>%
+  top_n(15) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  labs(y = "Count",
+       x = "Unique words",
+       title = "Count of unique words found in NYC Violation Descriptions",
+       subtitle = "Stop words removed from the list")
+
+
+```
+
+```{r}
+library(widyr)
+
+# remove punctuation, convert to lowercase, add id for each tweet!
+nyc_paired_words <- textdata %>%
+  dplyr::select(StrippedText) %>%
+  unnest_tokens(paired_words, StrippedText, token = "ngrams", n = 2)
+
+nyc_paired_words %>%
+  count(paired_words, sort = TRUE)
+
+library(tidyr)
+nyc_separated_words <- nyc_paired_words %>%
+  separate(paired_words, c("word1", "word2"), sep = " ")
+
+nyc_filtered <- nyc_separated_words %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+nyc_filtered
+
+# new bigram counts:
+nyc_words_counts <- nyc_filtered %>%
+  count(word1, word2, sort = TRUE)
+
+head(nyc_words_counts)
+
+```
+
+```{r}
+set.seed(1234)
+wordcloud(words = nyc_words_counts$word1, freq = nyc_words_counts$n, min.freq = 200,
+        max.words=70, random.order=FALSE, rot.per=0.5, 
+        colors=brewer.pal(8, "Dark2")
+        )
+
+
+```
+
+```{r}
+
+top_restaurant <- function(df12,x,y){
+    dt<-df12%>%
+    filter(INSPECTION.YEAR == x)%>%
+    filter(str_detect(VIOLATION.DESCRIPTION, regex("y", ignore_case = TRUE)))%>%
+    group_by(CAMIS,DBA)%>%
+    summarise(count=n())%>%
+    arrange(desc(count))%>%
+    head(10)
+    print(dt)
+
+}
+
+# function call
+top_restaurant(df_tib,2020,"contamination")
+
+```
+
+
+
+
+#
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
